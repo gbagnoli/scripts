@@ -1,5 +1,23 @@
 #/bin/bash
 
+# This is a simple script to backup a BTRFS system to another BTRFS filesystem.
+# It is based on the procedure described at http://www.sanitarium.net/golug/rsync+btrfs_backups_2011.html
+# It works like this:
+#  - it mounts the source btrfs <device> (-d option) on a temporary path
+#  - for each defined subvolume (-s option), it creates a readonly snapshot.
+#  - the readonly snapshot is used as rsync source. The destination is another subvolume,
+#    which will be created if it does not exists.
+#  - After rsyncing it creates a readonly snapshot on the destination filesystem
+#  - it removes the source readonly snapshot (unless -k is present)
+#  - after all subvolumes are synced, it umounts the device and remove all temporary paths.
+#
+# Options (as subvolumes or device or backup_directory ) can be defined in a configuration file
+# The contentnfiguration file is searched at "$HOME/.config/$(basename $0)/settings.sh" and will be
+# sourced if it exists.
+# Rsync excludes will be read from file, in the same config directory: i.e. if the subvolume is named
+# "mysub" the exclude file will be seached at "$HOME/.config/$(basename $0)/mysub.exclude"
+
+# exit on errors and for unbound variables.
 set -e
 set -u
 
@@ -14,7 +32,7 @@ config_dir="$HOME/.config/$prog"
 settings="$config_dir/settings.sh"
 extra_rsync_options=""
 declare -a subvolumes
-subvolumes[0]="__placeholder__"
+subvolumes[0]="__placeholder__" # leave this.
 
 # this can be overridden in settings
 device=""
@@ -45,7 +63,7 @@ function usage()
     echo -e " -S\t: Clear all defined subvolumes, included those added with -s prior to this flag"
     echo -e " -h\t: show this help"
     echo -e " -f\t: do not ask for confirmation"
-    echo -e " -k\t: keep source read only snapshot"
+    echo -e " -k\t: keep source read-only snapshots"
     echo -e "\nConfiguration file at '$settings'"
     echo -e -n "\n Subvolumes: "
     if [ ${#subvolumes} -gt 1 ]; then
