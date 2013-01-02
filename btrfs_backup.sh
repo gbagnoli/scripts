@@ -68,6 +68,7 @@ function cleanup()
 {
     echo "Cleaning up"
     [ $keepsnapshot -ne 1 ] && [ ! -z $remove_snapshot ] && echo "Removing readonly snapshot" && sudo btrfs sub delete $remove_snapshot
+    [ -d $tmp_mount/$today/ ] && rmdir $tmp_mount/$today/
     [ $mounted -ne 0 ] && echo "unmounting source device $device" && umount $tmp_mount
     echo "Removing local temporary directory"
     rmdir $tmp_mount
@@ -115,6 +116,8 @@ function backup_subvolume() {
     rsync $options $src_snap/ $dest_path/
     echo "Creating snapshot at $dest_snap"
     btrfs sub snapshot -r $dest_path $dest_snap
+    [ $keepsnapshot -ne 1 ] && btrfs sub delete $remove_snapshot
+    remove_snapshot=""
 }
 
 
