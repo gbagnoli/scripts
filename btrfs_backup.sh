@@ -176,6 +176,7 @@ echo "Starting backups"
 
 mount $device $tmp_mount -o $mount_options
 mounted=1 # set mounted to 1 so on_exit trap will unmount
+[ ! -d $backup_directory ] && btrfs sub create $backup_directory
 
 for sub in "${subvolumes[@]:1}"; do
     backup_subvolume $sub
